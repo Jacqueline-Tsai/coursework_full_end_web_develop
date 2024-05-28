@@ -85,25 +85,56 @@ app.post('/api/persons', (req, res, next) => {
     });
   }
 
-  // if (persons.find(person => person.name === body.name)) {
-  //   return res.status(400).json({ 
-  //     error: 'name must be unique' 
-  //   });
-  // }
+  if (body.name.length < 3) {
+    return res.status(400).json({ 
+      error: 'Name must be at least 3 characters long' 
+    });
+  }
+
+  phone_pattern = /^\d{2,3}-\d{5,}$/
+  if (body.number.length < 8 || !phone_pattern.test(phoneNumber)) {
+    return res.status(400).json({ 
+      error: 'Phone number format isn\'t correct'
+    });
+  }
+
+  if (body.name.length < 3) {
+    return res.status(400).json({ 
+      error: 'name must be at least 3 characters long' 
+    });
+  }
 
   const phonebook = new Phonebook({
     name: body.name,
     number: body.number
   });
 
-  phonebook.save().then(savedPhonebook => {
-    res.json(savedPhonebook)
-  })
-  .catch(error => next(error))
+  phonebook.save()
+    .then(savedPhonebook => {
+      res.json(savedPhonebook)
+    })
+    .catch(error => next(error))
+});
+
+app.put('/api/persons/:id', (req, res, next) => {
+  const id = new mongoose.Types.ObjectId(req.params.id);
+  const body = req.body;
+
+  if (!body.name || !body.number) {
+    return res.status(400).json({
+      error: 'name or phone missing'
+    });
+  }
+
+  Phonebook.findByIdAndUpdate(id, {number: body.number})
+    .then(updatedPhonebook => {
+      res.json(updatedPhonebook);
+    })
+    .catch(error => next(error));
 });
 
 const unknownEndpoint = (req, res) => {
-  response.status(404).send({ error: 'unknown endpoint' });
+  res.status(404).send({ error: 'unknown endpoint' });
 };
 app.use(unknownEndpoint);
 
