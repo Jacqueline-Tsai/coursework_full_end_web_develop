@@ -31,18 +31,8 @@ const requestLogger = (request, response, next) => {
 app.use(requestLogger);
 
 app.get('/', (req, res) => {
-  response.send('<h1>Hello World!</h1>');
+  res.send('<h1>Hello World!</h1>');
 });
-
-// app.get('/info', (req, res) => {
-//   const numPersons = persons.length;
-//   const requestTime = new Date();
-
-//   res.send(
-//     `<p>Phonebook has info for ${numPersons} people</p>
-//      <p>${requestTime}</p>`
-//   );
-// });
 
 app.get('/api/persons', (req, res, next) => {
   Phonebook.find({})
@@ -70,7 +60,7 @@ app.delete('/api/persons/:id', (req, res, next) => {
   const id = new mongoose.Types.ObjectId(req.params.id);
 
   Phonebook.findByIdAndDelete(id)
-    .then(result => {
+    .then(() => {
       res.status(204).end()
     })
     .catch(error => next(error))
@@ -91,8 +81,8 @@ app.post('/api/persons', (req, res, next) => {
     });
   }
 
-  phone_pattern = /^\d{2,3}-\d{5,}$/
-  if (body.number.length < 8 || !phone_pattern.test(phoneNumber)) {
+  const phone_pattern = /^\d{2,3}-\d{5,}$/
+  if (body.number.length < 8 || !phone_pattern.test(body.number)) {
     return res.status(400).json({ 
       error: 'Phone number format isn\'t correct'
     });
@@ -141,7 +131,7 @@ app.use(unknownEndpoint);
 const errorHandler = (err, req, res, next) => {
   console.error(err.message)
   if (err.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
+    return res.status(400).send({ error: 'malformatted id' })
   } 
   next(err)
 }
