@@ -25,8 +25,8 @@ beforeEach(async () => {
   await blog.save();
 });
 
-describe('=== TEST BLOG API ===', () => {
-  test('the blog list application returns the correct amount of blog posts in the JSON format', async () => {
+describe('=== TEST BLOG API GET ===', () => {
+  test('1. the blog list application returns the correct amount of blog posts in the JSON format', async () => {
     await api
       .get('/api/blogs')
       .expect(200)
@@ -45,7 +45,9 @@ describe('=== TEST BLOG API ===', () => {
       expect(blog._id).toBeUndefined();
     });
   });
+})
 
+describe('=== TEST BLOG API POST===', () => {
   test('3. making an HTTP POST request to the /api/blogs URL successfully creates a new blog post.', async () => {
     const user = new User({ 
       username: 'testuser3', 
@@ -137,17 +139,121 @@ describe('=== TEST BLOG API ===', () => {
     blogsAtEnd = await Blog.find({});
     expect(blogsAtEnd).toHaveLength(blogsAtStart.length);
   });
+})
 
-  test('5. blog without url is not added and returns status code 400', async () => {
+describe('=== TEST BLOG API PUT ===', () => {
+  test('6. a blog can be updated', async () => {
     const user = new User({ 
       username: 'testuser6', 
       passwordHash: 'hashedpassword' 
     });
     await user.save();
 
-     // Only the initial blog should exist
+    const newBlog = {
+      title: 'Initial Title',
+      author: 'Initial Author',
+      url: 'http://example.com',
+      likes: 0,
+      user: user._id,
+    };
+
+    const savedBlogResponse = await api
+      .post('/api/blogs')
+      .send(newBlog)
+      .expect(201)
+      .expect('Content-Type', /application\/json/);
+
+    const blogToUpdate = savedBlogResponse.body;
+
+    const updatedBlog = {
+      title: 'Updated Title',
+      author: 'Updated Author',
+      url: 'http://updated-url.com',
+      likes: 100,
+    };
+
+    const updatedBlogResponse = await api
+      .put(`/api/blogs/${blogToUpdate.id}`)
+      .send(updatedBlog)
+      .expect(200)
+      .expect('Content-Type', /application\/json/);
+
+    expect(updatedBlogResponse.body.title).toStrictEqual(updatedBlog.title);
+    expect(updatedBlogResponse.body.author).toStrictEqual(updatedBlog.author);
+    expect(updatedBlogResponse.body.url).toStrictEqual(updatedBlog.url);
+    expect(updatedBlogResponse.body.likes).toStrictEqual(updatedBlog.likes);
+    expect(updatedBlogResponse.body.user).toStrictEqual(savedBlogResponse.body.user);
   });
 });
+
+// describe('=== TEST BLOG API DELETE ===', () => {
+//   test('7. a blog can be deleted', async () => {
+//     const user = new User({ 
+//       username: 'testuser7', 
+//       passwordHash: 'hashedpassword' 
+//     });
+//     await user.save();
+
+//     const newBlog = {
+//       title: 'Blog to be deleted',
+//       author: 'Jacqueline',
+//       url: 'http://example.com',
+//       likes: 9999,
+//       user: user._id,
+//     };
+
+//     const savedBlogResponse = await api
+//       .post('/api/blogs')
+//       .send(newBlog)
+//       .expect(201)
+//       .expect('Content-Type', /application\/json/);
+
+//     const blogToDelete = savedBlogResponse.body;
+
+//     await api
+//       .delete(`/api/blogs/${blogToDelete.id}`)
+//       .expect(204);
+
+//     const blogsAtEnd = await Blog.find({});
+//     expect(blogsAtEnd).toHaveLength(0);
+//   });
+
+//   test('8. a blog cannot be deleted by a user who did not create it', async () => {
+//     const blogsAtStart = await Blog.find({});
+
+//     const originalUser = new User({ 
+//       username: 'testuser8', 
+//       passwordHash: 'hashedpassword' 
+//     });
+//     await originalUser.save();
+
+//     const newBlog = {
+//       title: 'Blog not to be deleted',
+//       author: 'Author',
+//       url: 'http://example.com',
+//       likes: 0,
+//       user: originalUser._id
+//     };
+
+//     const savedBlogResponse = await api
+//       .post('/api/blogs')
+//       .send(newBlog)
+//       .expect(201)
+//       .expect('Content-Type', /application\/json/);
+
+//     const blogToDelete = savedBlogResponse.body;
+//     const anotherUser = new User({ username: 'anotheruser', passwordHash: await bcrypt.hash('sekret', 10) });
+//     await anotherUser.save();
+
+//     await api
+//       .delete(`/api/blogs/${blogToDelete.id}`)
+//       .expect(401);
+
+//     const blogsAtEnd = await Blog.find({});
+//     expect(blogsAtEnd).toHaveLength(blogsAtStart.length + 1);
+//   });
+// });
+
 
 afterAll(async () => {
   await mongoose.connection.close();
